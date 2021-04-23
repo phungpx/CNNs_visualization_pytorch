@@ -1,0 +1,36 @@
+gradCAM:
+    module: modules.gradCAM.gradCAM
+    name: gradCAM
+    gradCAM:
+        target_module: '''resnet18_conv'''
+        target_layer: '''7'''
+        model_setting:
+            arch_setting:
+                module: models.definitions.resnet18
+                name: Resnet18
+                Resnet18:
+                    num_classes: 2
+            classes: ['hole', 'none']
+            weight_path: 'models/weights/hole_detection/resnet18/2103310956/best_model_66_loss=-0.1619.pt'
+        preprocess_setting:
+            image_size: (224, 224)
+        device: '''cpu'''
+
+gradCAM_pretrained:
+    module: modules.gradCAM.gradCAM
+    name: gradCAM
+    gradCAM:
+        target_module: '''layer4'''
+        target_layer: '''2'''
+        model_setting:
+            arch_setting:
+                module: torchvision.models
+                name: resnet50
+                resnet50:
+                    pretrained: True
+            weight_path: null
+        preprocess_setting:
+            image_size: (224, 224)
+            mean: [0.485, 0.456, 0.406]
+            std: [0.229, 0.224, 0.225]
+        device: '''cpu'''
