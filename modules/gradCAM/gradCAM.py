@@ -1,33 +1,45 @@
 import cv2
 import torch
-import torchvision
 import numpy as np
 import torch.nn as nn
-from PIL import Image
+
+from typing import Tuple, Dict, Optional
 
 import utils
 
 
 class gradCAM(nn.Module):
-    def __init__(self, model_setting, preprocess_setting, target_module, target_layer, device):
+    def __init__(self, target_module: str = None, target_layer: str = None,
+                 model_config: Dict = None, classes: Dict = {0: None},
+                 weight_path: Optional[str] = None,
+                 image_size: Tuple[int, int] = (224, 224),
+                 mean: Optional[Tuple[float, float, float]] = None,
+                 std: Optional[Tuple[float, float, float]] = None,
+                 device: str = 'cpu') -> None:
         super(gradCAM, self).__init__()
+        self.std = std
+        self.mean = mean
         self.device = device
+        self.classes = classes
+        self.image_size = image_size
         self.target_layer = target_layer
         self.target_module = target_module
-        self.model_setting = model_setting
-        self.preprocess_setting = preprocess_setting
 
-        self.model = utils.create_instance(model_setting['arch_setting'])
-        if model_setting['weight_path'] is not None:
-            self.model.load_state_dict(torch.load(model_setting['weight_path'], map_location='cpu'))
-        self.model.to(self.device)
-        self.model.eval()
+        if (self.mean is not None) and (self.std is not None):
+            self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1)
+            self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1)
+
+        self.model = utils.create_instance(model_config)
+        if weight_path is not None:
+            self.model.load_state_dict(torch.load(f=utils.abs_path(weight_path), map_location='cpu'))
+        self.model.to(self.device).eval()
 
         self.target_gradients = list()
         self.target_activations = list()
+
         self._register_hook(self.model, self.target_module, self.target_layer)
 
-    def _register_hook(self, model, target_module, target_layer):
+    def _register_hook(self, model: nn.Module, target_module: str, target_layer: str) -> None:
         if target_module not in list(model._modules.keys()):
             raise TypeError('target module must be in list of modules of model')
 
@@ -45,34 +57,29 @@ class gradCAM(nn.Module):
         model._modules[target_module]._modules[target_layer].register_forward_hook(register_forward_hook)
         model._modules[target_module]._modules[target_layer].register_backward_hook(register_backward_hook)
 
-    def preprocess(self, image):
-        image_size = eval(self.preprocess_setting.get('image_size', (image.shape[1], image.shape[0])))
-        mean, std = self.preprocess_setting.get('mean', None), self.preprocess_setting.get('std', None)
-
-        if (mean is not None) and (std is not None):
-            sample = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # convert image type BGR to RGB
-            sample = Image.fromarray(sample)  # convert array image to PIL image
-            sample = torchvision.transforms.Resize(size=image_size)(sample)
-            sample = torchvision.transforms.ToTensor()(sample)
-            sample = torchvision.transforms.Normalize(mean=mean, std=std)(sample)
-            sample = sample.unsqueeze(dim=0).to(self.device)
-        else:
-            sample = cv2.resize(image, dsize=image_size)
-            sample = torch.from_numpy(sample).to(torch.float).to(self.device)
-            sample = sample.unsqueeze(dim=0).permute(0, 3, 1, 2)
-            sample = (sample - sample.mean(dim=(1, 2, 3), keepdims=True)) / sample.std(dim=(1, 2, 3), keepdims=True)
-
-        return sample
-
-    def show_grad_cam(self, image, grad_cam):
+    def _show_grad_cam(self, image: np.ndarray, grad_cam: np.ndarray) -> np.ndarray:
         heatmap = cv2.applyColorMap((grad_cam * 255).astype(np.uint8), cv2.COLORMAP_JET)
         heatmap = (np.float32(image) + np.float32(heatmap)) / 255.
         heatmap = ((heatmap / np.max(heatmap)) * 255).astype(np.uint8)
         return heatmap
 
-    def forward(self, image):
-        H, W = image.shape[:2]
-        sample = self.preprocess(image)  # [1, C, Hs, Ws]
+    def _preprocess(self, image: np.ndarray) -> torch.Tensor:
+        sample = cv2.resize(image, dsize=self.image_size)
+        if (self.mean is not None) and (self.std is not None):
+            sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
+
+        sample = torch.from_numpy(sample).to(self.device).to(torch.float)
+        sample = sample.unsqueeze(dim=0).permute(0, 3, 1, 2).contiguous()
+
+        if (self.mean is not None) and (self.std is not None):
+            sample = (sample - self.mean) / self.std
+        else:
+            sample = (sample - sample.mean()) / sample.std()
+
+        return sample
+
+    def forward(self, image: np.ndarray) -> Tuple[np.ndarray, str, float]:
+        sample = self._preprocess(image)  # [1, C, Hs, Ws]
         preds = self.model(sample)  # [1, num_classes]
 
         categories = torch.argmax(preds, dim=1, keepdims=True)   # [1, num_classes]
@@ -89,12 +96,15 @@ class gradCAM(nn.Module):
 
         weights = torch.mean(target_gradient, dim=(0, 2, 3), keepdims=True)  # [1, Cf, 1, 1]
         grad_cam = torch.sum(target_activation * weights, dim=(0, 1), keepdims=True)  # [1, 1, Hf, Wf]
-        grad_cam = nn.functional.relu(grad_cam)  # [1, 1, Hf, Wf]
-        grad_cam = nn.functional.interpolate(input=grad_cam, size=(H, W), mode='bilinear', align_corners=False)  # [1, 1, H, W]
+        grad_cam = nn.ReLU(inplace=True)(grad_cam)  # [1, 1, Hf, Wf]
+        grad_cam = nn.functional.interpolate(input=grad_cam, size=image.shape[:2], mode='bilinear', align_corners=False)  # [1, 1, H, W]
         grad_cam = grad_cam.squeeze(dim=0).squeeze(dim=0)  # [H, W]
         grad_cam = (grad_cam - grad_cam.min()) / (grad_cam.max() - grad_cam.min())
         grad_cam = grad_cam.detach().cpu().data.numpy()
 
-        heatmap = self.show_grad_cam(image, grad_cam)
+        visual_image = self._show_grad_cam(image, grad_cam)
 
-        return grad_cam, heatmap
+        pred = preds.softmax(dim=1).squeeze(dim=0)
+        class_name, class_score = self.classes[pred.argmax().item()], pred[pred.argmax().item()].item()
+
+        return visual_image, class_name, class_score
