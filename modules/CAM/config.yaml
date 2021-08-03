@@ -1,53 +1,25 @@
-resnet18:
-  module: modules.CAM.CAM
+cifar10:
+  module: modules.CAM.class_activation_map
   name: ClassActivationMap
   ClassActivationMap:
-    arch_config:
+    model_config:
       module: models.definitions.resnet18
       name: Resnet18
       Resnet18:
-        num_classes: 2
+        num_classes: 10
     classes:
-      - hole
-      - none
-      # - airplane
-      # - automobile
-      # - bird
-      # - cat
-      # - deer
-      # - dog
-      # - frog
-      # - horse
-      # - ship
-      # - truck
+      - airplane
+      - automobile
+      - bird
+      - cat
+      - deer
+      - dog
+      - frog
+      - horse
+      - ship
+      - truck
     image_size: (224, 224)
-    weight_path: '''models/weights/hole_detection/resnet18/2103191429/best_model_94_loss=-0.1392.pt'''
-    # weight_path: '''models/weights/cifar10/resnet18_3.pt'''
-    device: '''cpu'''
-
-transformer_resnet18:
-  module: modules.CAM.CAM
-  name: ClassActivationMap
-  ClassActivationMap:
-    arch_config:
-      module: models.definitions.transformer_resnet18
-      name: TransformerResnet18
-      TransformerResnet18:
-        num_classes: 2
-    classes:
-      - hole
-      - none
-      # - airplane
-      # - automobile
-      # - bird
-      # - cat
-      # - deer
-      # - dog
-      # - frog
-      # - horse
-      # - ship
-      # - truck
-    image_size: (224, 224)
-    weight_path: '''models/weights/hole_detection/transformer_resnet18/2103191437/best_model_83_loss=-0.1259.pt'''
-    # weight_path: '''models/weights/cifar10/transformer_resnet18_3.pt'''
+    weight_path: '''models/weights/cifar10/resnet18_3.pt'''
+    mean: '(0.485, 0.456, 0.406)'
+    std: '(0.229, 0.224, 0.225)'
     device: '''cpu'''
