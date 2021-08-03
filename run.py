@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
         image = cv2.imread(str(image_path))
 
-        class_name, class_score, heatmap = visualizer(image, target_layer='resnet18_conv')
+        class_name, class_score, heatmap = visualizer(image)
 
         cv2.imwrite(str(output_dir.joinpath(image_path.name)), heatmap)
 

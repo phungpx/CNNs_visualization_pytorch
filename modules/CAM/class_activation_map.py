@@ -9,7 +9,9 @@ import utils
 
 
 class ClassActivationMap(nn.Module):
-    def __init__(self, model_config: Dict, classes: Dict, weight_path: str,
+    def __init__(self, target_layer: str = None, linear_layer: Optional[str] = None,
+                 model_config: Dict = None, classes: Dict = {0: None},
+                 weight_path: Optional[str] = None,
                  image_size: Tuple[int, int] = (224, 224),
                  mean: Optional[Tuple[float, float, float]] = None,
                  std: Optional[Tuple[float, float, float]] = None,
@@ -20,13 +22,18 @@ class ClassActivationMap(nn.Module):
         self.device = device
         self.classes = classes
         self.image_size = image_size
+        self.target_layer = target_layer
+        self.linear_layer = linear_layer
 
         if (self.mean is not None) and (self.std is not None):
             self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1)
             self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1)
 
         self.model = utils.create_instance(model_config)
-        self.model.load_state_dict(state_dict=torch.load(f=utils.abs_path(weight_path), map_location='cpu'))
+
+        if weight_path is not None:
+            self.model.load_state_dict(state_dict=torch.load(f=utils.abs_path(weight_path), map_location='cpu'))
+
         self.model.to(self.device).eval()
 
         self.activations = list()
@@ -41,10 +48,10 @@ class ClassActivationMap(nn.Module):
 
     def _get_softmax_weights(self, linear_layer=None):
         if linear_layer:
-            assert linear_layer in list(self.model._modules.keys()), 'classifier_layer must be in list of modules of model'
+            assert linear_layer in list(dict(self.model.named_parameters()).keys()), 'classifier_layer must be in list of modules of model'
             softmax_weights = dict(self.model.named_parameters())[linear_layer].data
         else:
-            softmax_weights = list(self.model.parameters())[-2].data
+            softmax_weights = list(self.model.parameters())[-2].data  # index -1 is bias and -2 is weight of final linear layer
         return softmax_weights
 
     def preprocess(self, image: np.ndarray) -> torch.Tensor:
@@ -96,14 +103,14 @@ class ClassActivationMap(nn.Module):
 
         return saliency_map
 
-    def forward(self, image, target_layer='resnet18_conv', linear_layer=None):
+    def forward(self, image):
         sample = self.preprocess(image)
 
         preds = self.process(sample)
 
         class_name, class_score = self.postprocess(preds)
 
-        cam = self.CAM(sample, image.shape[1::-1], target_layer, linear_layer)
+        cam = self.CAM(sample, image.shape[1::-1], self.target_layer, self.linear_layer)
 
         cam = (cam * 0.5 + image * 0.5).astype(np.uint8)
 
