@@ -60,6 +60,6 @@ if __name__ == "__main__":
         cv2.imwrite(str(output_dir.joinpath(image_path.name)), image)
 
         if args.show_image:
-            cv2.imshow(f'{class_name}_{class_score: .2f}', _resize(image))
+            cv2.imshow(image_path.name, _resize(image))
             cv2.waitKey()
             cv2.destroyAllWindows()
