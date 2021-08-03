@@ -48,13 +48,18 @@ if __name__ == "__main__":
 
         image = cv2.imread(str(image_path))
 
-        heatmap, class_name, class_score = visualizer(image)
+        image, class_name, class_score = visualizer(image)
+        cv2.putText(img=image,
+                    text=f'{args.module_name}: {class_name} ({class_score * 100:.2f}%)',
+                    org=(0, int(0.06 * image.shape[0])),
+                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=max(image.shape) / 1000,
+                    color=(255, 255, 255),
+                    thickness=max(image.shape) // 400)
 
-        # cv2.putText(img=heatmap, text=f'{class_name}_{class_score: .2f}', origin=)
-
-        cv2.imwrite(str(output_dir.joinpath(image_path.name)), heatmap)
+        cv2.imwrite(str(output_dir.joinpath(image_path.name)), image)
 
         if args.show_image:
-            cv2.imshow(f'{class_name}_{class_score: .2f}', _resize(heatmap))
+            cv2.imshow(f'{class_name}_{class_score: .2f}', _resize(image))
             cv2.waitKey()
             cv2.destroyAllWindows()
