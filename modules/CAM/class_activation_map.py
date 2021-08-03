@@ -15,7 +15,7 @@ class ClassActivationMap(nn.Module):
                  image_size: Tuple[int, int] = (224, 224),
                  mean: Optional[Tuple[float, float, float]] = None,
                  std: Optional[Tuple[float, float, float]] = None,
-                 device: str = 'cpu'):
+                 device: str = 'cpu') -> None:
         super(ClassActivationMap, self).__init__()
         self.std = std
         self.mean = mean
@@ -38,7 +38,7 @@ class ClassActivationMap(nn.Module):
 
         self.activations = list()
 
-    def _register_forward_hook(self, target_layer):
+    def _register_forward_hook(self, target_layer: str) -> None:
         assert target_layer in list(self.model._modules.keys()), 'target_layer must be in list of modules of model'
 
         def hook_feature(module, input, output):
@@ -46,7 +46,7 @@ class ClassActivationMap(nn.Module):
 
         self.model._modules.get(target_layer).register_forward_hook(hook_feature)
 
-    def _get_softmax_weights(self, linear_layer=None):
+    def _get_softmax_weights(self, linear_layer=None) -> torch.Tensor:
         if linear_layer:
             assert linear_layer in list(dict(self.model.named_parameters()).keys()), 'classifier_layer must be in list of modules of model'
             softmax_weights = dict(self.model.named_parameters())[linear_layer].data
@@ -54,7 +54,7 @@ class ClassActivationMap(nn.Module):
             softmax_weights = list(self.model.parameters())[-2].data  # index -1 is bias and -2 is weight of final linear layer
         return softmax_weights
 
-    def preprocess(self, image: np.ndarray) -> torch.Tensor:
+    def _preprocess(self, image: np.ndarray) -> torch.Tensor:
         sample = cv2.resize(image, dsize=self.image_size)
         sample = torch.from_numpy(sample).to(self.device).to(torch.float)
         sample = sample.unsqueeze(dim=0).permute(0, 3, 1, 2).contiguous()
@@ -66,25 +66,18 @@ class ClassActivationMap(nn.Module):
 
         return sample
 
-    def process(self, sample: torch.Tensor) -> torch.Tensor:
-        with torch.no_grad():
-            preds = self.model(sample)
-            return preds
+    def forward(self, image: np.ndarray) -> Tuple[np.ndarray, str, float]:
+        self._register_forward_hook(target_layer=self.target_layer)
 
-    def postprocess(self, preds: torch.Tensor) -> Tuple[str, float]:
-        pred = preds.softmax(dim=1).squeeze(dim=0)
-        class_name = self.classes[pred.argmax().item()]
-        class_score = pred[pred.argmax()].item()
-        return class_name, class_score
-
-    def CAM(self, sample, class_activation_map_size, target_layer, linear_layer=None):
-        self._register_forward_hook(target_layer=target_layer)
+        sample = self._preprocess(image=image)
 
         with torch.no_grad():
             preds = self.model(sample)
 
-        class_idx = preds.softmax(dim=1).squeeze(dim=0).argmax().item()
-        softmax_weights = self._get_softmax_weights(linear_layer=linear_layer)
+        pred = preds.softmax(dim=1).squeeze(dim=0)  # sample with batch_size is 1
+        class_idx = pred.argmax().item()
+
+        softmax_weights = self._get_softmax_weights(linear_layer=self.linear_layer)
         softmax_weight = softmax_weights[class_idx, :]
         activation_map = self.activations[-1]
 
@@ -98,20 +91,11 @@ class ClassActivationMap(nn.Module):
         saliency_map = (saliency_map - saliency_map_min).div(saliency_map_max - saliency_map_min).data
 
         saliency_map = (saliency_map * 255).to(torch.uint8).cpu().detach().numpy()
-        saliency_map = cv2.resize(saliency_map, dsize=class_activation_map_size)
+        saliency_map = cv2.resize(saliency_map, dsize=image.shape[1::-1])
         saliency_map = cv2.applyColorMap(saliency_map, cv2.COLORMAP_JET)
 
-        return saliency_map
+        visual_image = (saliency_map * 0.5 + image * 0.5).astype(np.uint8)
 
-    def forward(self, image):
-        sample = self.preprocess(image)
+        class_name, class_score = self.classes[class_idx], pred[class_idx].item()
 
-        preds = self.process(sample)
-
-        class_name, class_score = self.postprocess(preds)
-
-        cam = self.CAM(sample, image.shape[1::-1], self.target_layer, self.linear_layer)
-
-        cam = (cam * 0.5 + image * 0.5).astype(np.uint8)
-
-        return class_name, class_score, cam
+        return visual_image, class_name, class_score

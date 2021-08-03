@@ -48,7 +48,9 @@ if __name__ == "__main__":
 
         image = cv2.imread(str(image_path))
 
-        class_name, class_score, heatmap = visualizer(image)
+        heatmap, class_name, class_score = visualizer(image)
+
+        # cv2.putText(img=heatmap, text=f'{class_name}_{class_score: .2f}', origin=)
 
         cv2.imwrite(str(output_dir.joinpath(image_path.name)), heatmap)
 
