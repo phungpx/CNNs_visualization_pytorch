@@ -56,6 +56,9 @@ class ClassActivationMap(nn.Module):
 
     def _preprocess(self, image: np.ndarray) -> torch.Tensor:
         sample = cv2.resize(image, dsize=self.image_size)
+        if (self.mean is not None) and (self.std is not None):
+            sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
+
         sample = torch.from_numpy(sample).to(self.device).to(torch.float)
         sample = sample.unsqueeze(dim=0).permute(0, 3, 1, 2).contiguous()
 
