@@ -15,7 +15,6 @@ class ClassActivationMap(nn.Module):
                  std: Optional[Tuple[float, float, float]] = None,
                  device: str = 'cpu'):
         super(ClassActivationMap, self).__init__()
-        self.activations = list()
         self.std = std
         self.mean = mean
         self.device = device
@@ -27,8 +26,10 @@ class ClassActivationMap(nn.Module):
             self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1)
 
         self.model = utils.create_instance(model_config)
-        self.model.load_state_dict(torch.load(weight_path, map_location='cpu'))
+        self.model.load_state_dict(state_dict=torch.load(f=utils.abs_path(weight_path), map_location='cpu'))
         self.model.to(self.device).eval()
+
+        self.activations = list()
 
     def _register_forward_hook(self, target_layer):
         assert target_layer in list(self.model._modules.keys()), 'target_layer must be in list of modules of model'
