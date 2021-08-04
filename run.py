@@ -7,7 +7,7 @@ from natsort import natsorted
 import utils
 
 
-def _resize(image, max_dimension=500):
+def _resize(image, max_dimension=1000):
     h, w = image.shape[:2]
     if (h > w) and (h > max_dimension):
         image = cv2.resize(image, dsize=(int(max_dimension * w / h), max_dimension))
@@ -31,8 +31,6 @@ if __name__ == "__main__":
     image_paths = natsorted(image_paths, key=lambda x: x.stem)
 
     output_dir = Path(args.output_dir) if args.output_dir else Path('output/visual')
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
 
     config = utils.load_yaml(args.config_path)
     visualizer = utils.create_instance(config[args.module_name])
@@ -52,7 +50,11 @@ if __name__ == "__main__":
                     color=(255, 255, 255),
                     thickness=max(image.shape) // 400)
 
-        cv2.imwrite(str(output_dir.joinpath(image_path.name)), image)
+        save_dir = output_dir.joinpath(Path(args.config_path).parent.stem).joinpath(args.module_name)
+        if not save_dir.exists():
+            save_dir.mkdir(parents=True)
+
+        cv2.imwrite(str(save_dir.joinpath(image_path.name)), _resize(image))
 
         if args.show_image:
             cv2.imshow(image_path.name, _resize(image))
