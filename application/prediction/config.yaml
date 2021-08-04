@@ -1,5 +1,5 @@
 cifar_10:
-  module: modules.flask.predictor
+  module: application.prediction.predictor
   name: Predictor
   Predictor:
     model_config:
