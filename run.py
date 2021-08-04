@@ -4,11 +4,6 @@ import argparse
 from pathlib import Path
 from natsort import natsorted
 
-
-import os
-import sys
-sys.path.append(os.environ['PWD'])
-
 import utils
 
 
@@ -25,7 +20,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('image_path', help='image dir.')
     parser.add_argument('--config-path', default='./modules/CAM/config.yaml')
-    parser.add_argument('--module-name', default='cifar10')
+    parser.add_argument('--module-name', default='cifar_10')
     parser.add_argument('--output-dir', help='path to save image')
     parser.add_argument('--pattern', help='glob pattern if image_path is a dir.')
     parser.add_argument('--show-image', action='store_true')
@@ -35,7 +30,7 @@ if __name__ == "__main__":
     image_paths = list(Path(args.image_path).glob(args.pattern)) if args.pattern else [Path(args.image_path)]
     image_paths = natsorted(image_paths, key=lambda x: x.stem)
 
-    output_dir = Path(args.output_dir) if args.output_dir else Path('output/')
+    output_dir = Path(args.output_dir) if args.output_dir else Path('output/visual')
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
