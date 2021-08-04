@@ -10,6 +10,11 @@ Grad-CAM++: [Improved Visual Explanations for Deep Convolutional Networks](https
 ```
 visualization_pytorch
     |
+    ├── application
+    |	    ├── templates
+    |       |  	  └── home.html
+    |	    └── flask.py
+    |
     ├── models
     |	    ├── definitions  # including all definition of models
     |	    └── weights      # including all trained weights for loading into models.
@@ -31,15 +36,31 @@ visualization_pytorch
 ## Explainations
 ### CAM
 
-## Experiments
-### CAM
-*CAM using model which is trained with custom model and cifar 10 dataset (10 classes).*
+## Usage
+
+### CAM, Grad-CAM using model which is trained with custom model and cifar 10 dataset (10 classes).
+* **CAM**
 ```bash
-python run.py <image_path/image_dir> --show-image --config-path 'module/CAM/config.yaml' --module-name 'cifar_10'
+python run.py <image_path> --show-image --config-path module/CAM/config.yaml --module-name cifar_10
+python run.py <image_dir> --pattern <image_pattern> --show-image --config-path module/CAM/config.yaml --module-name cifar_10
 ```
-*CAM using ```torchvision.models.resnet18``` with pretrained weight and imagenet dataset (1000 classes).*
+* **Grad-CAM**
 ```bash
-python run.py <image_path/image_dir> --show-image --config-path 'module/CAM/config.yaml' --module-name 'image_net'
+python run.py <image_path> --show-image --config-path module/gradCAM/config.yaml --module-name cifar_10
+python run.py <image_dir> --pattern <image_pattern> --show-image --config-path module/gradCAM/config.yaml --module-name cifar_10
 ```
+
+### CAM, Grad-CAM using ```torchvision.models.resnet18``` with pretrained weight and imagenet dataset (1000 classes).
+* **CAM**
+```bash
+python run.py <image_path/image_dir> --show-image --config-path module/CAM/config.yaml --module-name image_net
+python run.py <image_dir> --pattern <image_pattern> --show-image --config-path 'module/CAM/config.yaml' --module-name image_net
+```
+* **Grad-CAM**
+```bash
+python run.py <image_path> --show-image --config-path module/gradCAM/config.yaml --module-name image_net
+python run.py <image_dir> --pattern <image_pattern> --show-image --config-path module/gradCAM/config.yaml --module-name image_net
+```
+
 ## Examples
 
