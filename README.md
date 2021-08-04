@@ -1,10 +1,10 @@
 # CNNs Visualization using CAM, gradCAM or gradCAM++
 Using Grad, Grad-CAM or Grad-CAM++ for visualizing feature maps of Deep Convolutional Networks
 
-## Papers
-CAM: [Learning Deep Features for Discriminative Localization](https://arxiv.org/pdf/1512.04150.pdf)\
-GradCAM: [Visual Explanations from Deep Networks via Gradient-based Localization](https://arxiv.org/pdf/1610.02391.pdf)\
-Grad-CAM++: [Improved Visual Explanations for Deep Convolutional Networks](https://arxiv.org/pdf/1710.11063.pdf)
+## Reference
+[1] CAM: [Learning Deep Features for Discriminative Localization](https://arxiv.org/pdf/1512.04150.pdf)\
+[2] GradCAM: [Visual Explanations from Deep Networks via Gradient-based Localization](https://arxiv.org/pdf/1610.02391.pdf)\
+[3] Grad-CAM++: [Improved Visual Explanations for Deep Convolutional Networks](https://arxiv.org/pdf/1710.11063.pdf)
 
 ## Project Structure
 ```
@@ -12,7 +12,7 @@ CNNs_visualization_pytorch
                     |
                     ├── application
                     |	    ├── templates
-                    |       |  	  └── home.html
+                    |     |  	  └── home.html
                     |	    └── flask.py
                     |
                     ├── models
@@ -21,13 +21,13 @@ CNNs_visualization_pytorch
                     |
                     ├── modules
                     |	    ├── CAM
-                    |       |     ├── class_activation_map.py
-                    |       |  	  └── config.yaml
+                    |     |     ├── class_activation_map.py
+                    |     |  	  └── config.yaml
                     |	    ├── gradCAM
-                    |       |     ├── gradCAM.py
-                    |       |  	  └── config.yaml
-                    |       └── gradCAMpp
-                    |             ├── gradCAMpp.py
+                    |     |     ├── gradCAM.py
+                    |     |  	  └── config.yaml
+                    |     └── gradCAMpp
+                    |           ├── gradCAMpp.py
                     |       	  └── config.yaml
                     ├── run.py
                     └── utils.py
@@ -70,5 +70,5 @@ python run.py <image_path> --show-image --config-path module/gradCAM/config.yaml
 python run.py <image_dir> --pattern <image_pattern> --show-image --config-path module/gradCAM/config.yaml --module-name image_net
 ```
 
-## Examples
+## Results
 
