@@ -68,11 +68,11 @@ class gradCAM(nn.Module):
         if (self.mean is not None) and (self.std is not None):
             sample = cv2.cvtColor(sample, cv2.COLOR_BGR2RGB)
 
-        sample = torch.from_numpy(sample).to(self.device).to(torch.float)
+        sample = torch.from_numpy(sample).to(self.device).float()
         sample = sample.unsqueeze(dim=0).permute(0, 3, 1, 2).contiguous()
 
         if (self.mean is not None) and (self.std is not None):
-            sample = (sample - self.mean) / self.std
+            sample = (sample.div(255.) - self.mean) / self.std
         else:
             sample = (sample - sample.mean()) / sample.std()
 
