@@ -75,17 +75,17 @@ python run.py <image_dir> --pattern <image_pattern> --show-image --config-path m
 
 ## Explainations
 
-#### CAM <Updating>
+#### CAM (Updating)
 <div align="center">
   <img src="./results/reference/CAM.PNG" width="850px" />
 </div>
 
-#### Grad-CAM <Updating>
+#### Grad-CAM (Updating)
 <div align="center">
   <img src="./results/reference/grad-CAM.PNG" width="850px" />
 </div>
 
-#### Grad-CAM++ <Updating>
+#### Grad-CAM++ (Updating)
 
 ## Contributor
 *Xuan-Phung Pham*
