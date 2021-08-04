@@ -100,11 +100,12 @@ class gradCAM(nn.Module):
         grad_cam = nn.functional.interpolate(input=grad_cam, size=image.shape[:2], mode='bilinear', align_corners=False)  # [1, 1, H, W]
         grad_cam = grad_cam.squeeze(dim=0).squeeze(dim=0)  # [H, W]
         grad_cam = (grad_cam - grad_cam.min()) / (grad_cam.max() - grad_cam.min())
-        grad_cam = grad_cam.detach().cpu().data.numpy()
+        grad_cam = grad_cam.data.numpy()
 
-        visual_image = self._show_grad_cam(image, grad_cam)
+        visual_image = self._show_grad_cam(image=image, grad_cam=grad_cam)
 
         pred = preds.softmax(dim=1).squeeze(dim=0)
-        class_name, class_score = self.classes[pred.argmax().item()], pred[pred.argmax().item()].item()
+        class_name = self.classes[pred.argmax().item()]
+        class_score = pred[pred.argmax().item()].item()
 
         return visual_image, class_name, class_score
