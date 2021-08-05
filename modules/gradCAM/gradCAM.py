@@ -9,41 +9,37 @@ import utils
 
 
 class gradCAM(nn.Module):
-    def __init__(self, target_module: str = None, target_layer: str = None,
-                 model_config: Dict = None, classes: Dict = {0: None},
-                 weight_path: Optional[str] = None,
+    def __init__(self, target_module: str, target_layer: str, model_config: Dict,
+                 classes: Dict = {0: None}, weight_path: Optional[str] = None,
                  image_size: Tuple[int, int] = (224, 224),
                  mean: Optional[Tuple[float, float, float]] = None,
                  std: Optional[Tuple[float, float, float]] = None,
                  device: str = 'cpu') -> None:
         super(gradCAM, self).__init__()
-        self.std = std
-        self.mean = mean
         self.device = device
         self.classes = classes
         self.image_size = image_size
         self.target_layer = target_layer
         self.target_module = target_module
 
-        if (self.mean is not None) and (self.std is not None):
-            self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1)
-            self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1)
+        self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1) if mean else None
+        self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1) if std else None
 
         self.model = utils.create_instance(model_config)
         if weight_path is not None:
             self.model.load_state_dict(torch.load(f=utils.abs_path(weight_path), map_location='cpu'))
         self.model.to(self.device).eval()
 
-        self.target_gradients = list()
-        self.target_activations = list()
+        self.target_gradients: list = []
+        self.target_activations: list = []
 
-        self._register_hook(self.model, self.target_module, self.target_layer)
+        self._register_hook(target_module=self.target_module, target_layer=self.target_layer)
 
-    def _register_hook(self, model: nn.Module, target_module: str, target_layer: str) -> None:
-        if target_module not in list(model._modules.keys()):
+    def _register_hook(self, target_module: str, target_layer: str) -> None:
+        if target_module not in list(self.model._modules.keys()):
             raise TypeError('target module must be in list of modules of model')
 
-        if target_layer not in list(model._modules.get(target_module)._modules.keys()):
+        if target_layer not in list(self.model._modules.get(target_module)._modules.keys()):
             raise TypeError('target layer must be in list of layers of module')
 
         def register_forward_hook(module, input, output):
@@ -54,8 +50,8 @@ class gradCAM(nn.Module):
             self.target_gradients.clear()
             self.target_gradients.append(grad_output[0])
 
-        model._modules[target_module]._modules[target_layer].register_forward_hook(register_forward_hook)
-        model._modules[target_module]._modules[target_layer].register_backward_hook(register_backward_hook)
+        self.model._modules[target_module]._modules[target_layer].register_forward_hook(register_forward_hook)
+        self.model._modules[target_module]._modules[target_layer].register_backward_hook(register_backward_hook)
 
     def _show_grad_cam(self, image: np.ndarray, grad_cam: np.ndarray) -> np.ndarray:
         heatmap = cv2.applyColorMap((grad_cam * 255).astype(np.uint8), cv2.COLORMAP_JET)
@@ -82,10 +78,10 @@ class gradCAM(nn.Module):
         sample = self._preprocess(image)  # [1, C, Hs, Ws]
         preds = self.model(sample)  # [1, num_classes]
 
-        categories = torch.argmax(preds, dim=1, keepdims=True)   # [1, num_classes]
+        categories = torch.argmax(preds, dim=1, keepdim=True)   # [1, num_classes]
         onehot = torch.zeros(size=preds.shape, dtype=torch.float, device=self.device)  # [1, num_classes]
         onehot.scatter_(dim=1, index=categories, value=1)  # [1, num_classes]
-        onehot = onehot.requires_grad_(requires_grad=True)  # [1, num_classes]
+        onehot = onehot.requires_grad_()  # [1, num_classes]
 
         class_score = torch.sum(onehot * preds)  # scalar
         self.model.zero_grad()
@@ -94,8 +90,8 @@ class gradCAM(nn.Module):
         target_gradient = self.target_gradients[-1].detach().cpu().data   # [1, Cf, Hf, Wf]
         target_activation = self.target_activations[-1].detach().cpu().data   # [1, Cf, Hf, Wf]
 
-        weights = torch.mean(target_gradient, dim=(0, 2, 3), keepdims=True)  # [1, Cf, 1, 1]
-        grad_cam = torch.sum(target_activation * weights, dim=(0, 1), keepdims=True)  # [1, 1, Hf, Wf]
+        weights = torch.mean(target_gradient, dim=(0, 2, 3), keepdim=True)  # [1, Cf, 1, 1]
+        grad_cam = torch.sum(target_activation * weights, dim=(0, 1), keepdim=True)  # [1, 1, Hf, Wf]
         grad_cam = nn.ReLU(inplace=True)(grad_cam)  # [1, 1, Hf, Wf]
         grad_cam = nn.functional.interpolate(input=grad_cam, size=image.shape[:2], mode='bilinear', align_corners=False)  # [1, 1, H, W]
         grad_cam = grad_cam.squeeze(dim=0).squeeze(dim=0)  # [H, W]
