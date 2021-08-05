@@ -1,9 +1,9 @@
-import cv2
-import torch
-import numpy as np
-import torch.nn as nn
+from typing import Dict, Generator, List, Optional, Tuple, Union
 
-from typing import List, Tuple, Dict, Optional, Union, Generator
+import cv2
+import numpy as np
+import torch
+import torch.nn as nn
 
 import utils
 

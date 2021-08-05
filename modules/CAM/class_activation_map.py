@@ -1,8 +1,9 @@
+from typing import Dict, Optional, Tuple
+
 import cv2
-import torch
 import numpy as np
+import torch
 import torch.nn as nn
-from typing import Tuple, Dict, Optional
 
 import utils
 
@@ -44,10 +45,11 @@ class ClassActivationMap(nn.Module):
 
     def _get_softmax_weights(self, linear_layer: Optional[str] = None) -> torch.Tensor:
         if linear_layer:
-            assert linear_layer in list(dict(self.model.named_parameters()).keys()), 'classifier_layer must be in list of modules of model'
+            assert linear_layer in dict(self.model.named_parameters()), 'classifier_layer must be in modules of model'
             softmax_weights = dict(self.model.named_parameters())[linear_layer].data
         else:
-            softmax_weights = list(self.model.parameters())[-2].data  # index -1 is bias and -2 is weight of final linear layer
+            softmax_weights = list(self.model.parameters())[-2].data
+            # index -1 is bias and -2 is weight of final linear layer
         return softmax_weights
 
     def _preprocess(self, image: np.ndarray) -> torch.Tensor:

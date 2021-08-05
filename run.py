@@ -1,7 +1,7 @@
-import cv2
 import argparse
-
 from pathlib import Path
+
+import cv2
 from natsort import natsorted
 
 import utils
@@ -16,7 +16,7 @@ def _resize(image, max_dimension=1000):
     return image
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('image_path', help='image dir.')
     parser.add_argument('--config-path', default='./modules/CAM/config.yaml')

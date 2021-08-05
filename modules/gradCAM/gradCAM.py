@@ -1,9 +1,9 @@
-import cv2
-import torch
-import numpy as np
-import torch.nn as nn
+from typing import Dict, Optional, Tuple
 
-from typing import Tuple, Dict, Optional
+import cv2
+import numpy as np
+import torch
+import torch.nn as nn
 
 import utils
 
@@ -93,7 +93,8 @@ class gradCAM(nn.Module):
         weights = torch.mean(target_gradient, dim=(0, 2, 3), keepdim=True)  # [1, Cf, 1, 1]
         grad_cam = torch.sum(target_activation * weights, dim=(0, 1), keepdim=True)  # [1, 1, Hf, Wf]
         grad_cam = nn.ReLU(inplace=True)(grad_cam)  # [1, 1, Hf, Wf]
-        grad_cam = nn.functional.interpolate(input=grad_cam, size=image.shape[:2], mode='bilinear', align_corners=False)  # [1, 1, H, W]
+        grad_cam = nn.functional.interpolate(input=grad_cam, size=image.shape[:2],
+                                             mode='bilinear', align_corners=False)  # [1, 1, H, W]
         grad_cam = grad_cam.squeeze(dim=0).squeeze(dim=0)  # [H, W]
         grad_cam = (grad_cam - grad_cam.min()) / (grad_cam.max() - grad_cam.min())
         grad_cam = grad_cam.data.numpy()

@@ -1,18 +1,16 @@
-import cv2
 import argparse
-
-from pathlib import Path
-from natsort import natsorted
-
 import os
 import sys
+from pathlib import Path
+
+import cv2
+from natsort import natsorted
 
 sys.path.append(os.environ['PWD'])
 
-import utils
+import utils  # noqa: E402
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('image_path', help='image dir.')
     parser.add_argument('--output-dir', help='path to save image')
