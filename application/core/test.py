@@ -24,11 +24,7 @@ if __name__ == "__main__":
     image_paths = list(Path(args.image_path).glob(args.pattern)) if args.pattern else [Path(args.image_path)]
     image_paths = natsorted(image_paths, key=lambda x: x.stem)
 
-    output_dir = Path(args.output_dir) if args.output_dir else Path('output/flask/')
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
-
-    config = utils.load_yaml('modules/flask/config.yaml')
+    config = utils.load_yaml('application/core/config.yaml')
     predictor = utils.create_instance(config['cifar_10'])
 
     for idx, image_path in enumerate(image_paths[int(args.start_index) - 1:], int(args.start_index)):
@@ -47,10 +43,7 @@ if __name__ == "__main__":
                         color=(255, 255, 255),
                         thickness=max(image.shape) // 400)
 
-            if i == 0:
-                cv2.imwrite(str(output_dir.joinpath(image_path.name)), image)
-            else:
-                cv2.imwrite(str(output_dir.joinpath(f'{image_path.stem}_{i}{image_path.suffix}')), image)
+            print(f'[..] RESULT #{i + 1}: {class_name} - {class_score * 100:.2f}%')
 
             if args.show_image:
                 cv2.imshow(image_path.name, image)

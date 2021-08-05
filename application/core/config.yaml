@@ -1,5 +1,5 @@
 cifar_10:
-  module: application.prediction.predictor
+  module: application.core.predictor
   name: Predictor
   Predictor:
     model_config:

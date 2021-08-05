@@ -27,16 +27,13 @@ class Predictor(nn.Module):
                  batch_size: Optional[int] = None,
                  device: str = 'cpu') -> None:
         super(Predictor, self).__init__()
-        self.std = std
-        self.mean = mean
         self.device = device
         self.classes = classes
         self.image_size = image_size
         self.batch_size = batch_size
 
-        if (self.mean is not None) and (self.std is not None):
-            self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1)
-            self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1)
+        self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1) if mean else None
+        self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1) if std else None
 
         self.model = utils.create_instance(model_config)
         if weight_path is not None:
@@ -67,10 +64,16 @@ class Predictor(nn.Module):
         return preds
 
     def postprocess(self, preds: List[torch.Tensor]) -> List[Tuple[str, float]]:
-        preds = [pred.softmax(dim=1).squeeze(dim=0) for pred in preds]
-        preds = [(self.classes[pred.argmax().item()], pred[pred.argmax().item()].item()) for pred in preds]
+        outputs = []
 
-        return preds
+        for pred in preds:
+            pred = pred.softmax(dim=1).squeeze(dim=0)
+            scores = pred.data.cpu().numpy().tolist()
+            class_score = max(scores)
+            class_name = self.classes[scores.index(class_score)]
+            outputs.append((class_name, class_score))
+
+        return outputs
 
     def forward(self, images: List[np.ndarray]) -> List[Tuple[str, float]]:
         outputs = self.preprocess(images)

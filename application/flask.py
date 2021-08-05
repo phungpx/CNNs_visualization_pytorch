@@ -15,11 +15,11 @@ import utils
 app = Flask(__name__)
 CORS(app)
 
-config = utils.load_yaml('modules/APIbasic/prediction/config.yaml')
+config = utils.load_yaml('modules/application/core/config.yaml')
 predictor = utils.create_instance(config['cifar_10'])
 
 
-@app.route("/prediction", methods=["GET", "POST"])
+@app.route("/predict", methods=["GET", "POST"])
 def predict():
     if request.method == "GET":
         return render_template("home.html", value="Image")
@@ -28,10 +28,14 @@ def predict():
         if "file" not in request.files:
             return "IMAGE Not Uploaded"
 
-        file = request.files["file"].read()
+        # get file from the request
+        file = request.files["file"]
+
+        # convert that file to bytes
+        image_bytes = file.read()
 
         try:
-            image = Image.open(io.BytesIO(file), mode='r').convert('RGB')
+            image = Image.open(io.BytesIO(image_bytes), mode='r').convert('RGB')
         except IOError:
             return jsonify(predictions="Image Not Found, Please Upload File Again!")
 
