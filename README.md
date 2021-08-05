@@ -33,6 +33,16 @@ CNNs_visualization_pytorch
                     └── utils.py
 ```
 
+## TODO
+ - [x] Adding Class Activation Map method for visualizing the last convolutional layer in CNNs with AveragePooling.
+ - [x] Adding Grad-CAM method for visualizing any convolutional layer in CNNs.
+ - [ ] Applying GuidedBackprop method which is proposed in paper[2].
+ - [ ] Applying grad-CAM++ method which is proposed in paper[3].
+ - [x] Adding [flask](https://flask.palletsprojects.com/en/2.0.x/) to build a simply API.
+ - [x] Adding [.flake8](https://flake8.pycqa.org/en/latest/) to check coding style.
+ - [x] Adding [mypy](https://mypy.readthedocs.io/en/stable/introduction.html) to check my code and find common bugs.
+ - [x] Adding [pre-commit](https://pre-commit.com/) to solve hook issues.
+
 ## Usage
 
 > CAM, Grad-CAM using model which is trained with custom model and cifar 10 dataset (10 classes).
@@ -66,12 +76,6 @@ python run.py <image_dir> --pattern <image_pattern> --show-image --config-path m
 | grad-CAM |   <img src="./results/visual/gradCAM/cifar_10/horse.jpg" width="300">   |  <img src="./results/visual/gradCAM/image_net/horse.jpg" width="300">   |
 | CAM |   <img src="./results/visual/CAM/cifar_10/bird.jpg" width="300">   |  <img src="./results/visual/CAM/image_net/bird.jpg" width="300">   |
 | grad-CAM |   <img src="./results/visual/gradCAM/cifar_10/bird.jpg" width="300">   |  <img src="./results/visual/gradCAM/image_net/bird.jpg" width="300">   |
-
-## TODO
- - [x] Adding Class Activation Map method for visualizing the last convolutional layer in CNNs with AveragePooling.
- - [x] Adding Grad-CAM method for visualizing any convolutional layer in CNNs.
- - [ ] Applying GuidedBackprop method which is proposed in paper[2].
- - [ ] Applying grad-CAM++ method which is proposed in paper[3].
 
 ## Explainations
 
