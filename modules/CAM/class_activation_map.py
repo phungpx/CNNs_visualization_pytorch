@@ -9,7 +9,7 @@ import utils
 
 
 class ClassActivationMap(nn.Module):
-    def __init__(self, target_layer: str = None, linear_layer: Optional[str] = None,
+    def __init__(self, target_layer: str, linear_layer: Optional[str] = None,
                  model_config: Dict = None, classes: Dict = {0: None},
                  weight_path: Optional[str] = None,
                  image_size: Tuple[int, int] = (224, 224),
@@ -17,17 +17,14 @@ class ClassActivationMap(nn.Module):
                  std: Optional[Tuple[float, float, float]] = None,
                  device: str = 'cpu') -> None:
         super(ClassActivationMap, self).__init__()
-        self.std = std
-        self.mean = mean
         self.device = device
         self.classes = classes
         self.image_size = image_size
         self.target_layer = target_layer
         self.linear_layer = linear_layer
 
-        if (self.mean is not None) and (self.std is not None):
-            self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1)
-            self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1)
+        self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1) if mean else None
+        self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1) if std else None
 
         self.model = utils.create_instance(model_config)
 
@@ -36,7 +33,7 @@ class ClassActivationMap(nn.Module):
 
         self.model.to(self.device).eval()
 
-        self.activations = list()
+        self.activations: list = []
 
     def _register_forward_hook(self, target_layer: str) -> None:
         assert target_layer in list(self.model._modules.keys()), 'target_layer must be in list of modules of model'
@@ -46,7 +43,7 @@ class ClassActivationMap(nn.Module):
 
         self.model._modules.get(target_layer).register_forward_hook(hook_feature)
 
-    def _get_softmax_weights(self, linear_layer=None) -> torch.Tensor:
+    def _get_softmax_weights(self, linear_layer: Optional[str] = None) -> torch.Tensor:
         if linear_layer:
             assert linear_layer in list(dict(self.model.named_parameters()).keys()), 'classifier_layer must be in list of modules of model'
             softmax_weights = dict(self.model.named_parameters())[linear_layer].data
@@ -88,7 +85,7 @@ class ClassActivationMap(nn.Module):
         activation_map = activation_map.reshape(C, H * W)
         saliency_map = torch.matmul(softmax_weight, activation_map)
         saliency_map = saliency_map.reshape(H, W)
-        saliency_map = F.relu(saliency_map)
+        saliency_map = nn.ReLU(inplace=True)(saliency_map)
 
         saliency_map_min, saliency_map_max = saliency_map.min(), saliency_map.max()
         saliency_map = (saliency_map - saliency_map_min).div(saliency_map_max - saliency_map_min).data
