@@ -23,8 +23,8 @@ class ClassActivationMap(nn.Module):
         self.target_layer = target_layer
         self.linear_layer = linear_layer
 
-        self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1) if mean else None
-        self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1) if std else None
+        self.mean = torch.tensor(mean, dtype=torch.float, device=device).view(1, 3, 1, 1) if mean else None
+        self.std = torch.tensor(std, dtype=torch.float, device=device).view(1, 3, 1, 1) if std else None
 
         self.model = utils.create_instance(model_config)
 

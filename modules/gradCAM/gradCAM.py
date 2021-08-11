@@ -22,8 +22,8 @@ class gradCAM(nn.Module):
         self.target_layer = target_layer
         self.target_module = target_module
 
-        self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1) if mean else None
-        self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1) if std else None
+        self.mean = torch.tensor(mean, dtype=torch.float, device=device).view(1, 3, 1, 1) if mean else None
+        self.std = torch.tensor(std, dtype=torch.float, device=device).view(1, 3, 1, 1) if std else None
 
         self.model = utils.create_instance(model_config)
         if weight_path is not None:
