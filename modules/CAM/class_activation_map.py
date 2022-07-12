@@ -9,13 +9,18 @@ import utils
 
 
 class ClassActivationMap(nn.Module):
-    def __init__(self, target_layer: str, linear_layer: Optional[str] = None,
-                 model_config: Dict = None, classes: Dict = {0: None},
-                 weight_path: Optional[str] = None,
-                 image_size: Tuple[int, int] = (224, 224),
-                 mean: Optional[Tuple[float, float, float]] = None,
-                 std: Optional[Tuple[float, float, float]] = None,
-                 device: str = 'cpu') -> None:
+    def __init__(
+        self,
+        target_layer: str,
+        linear_layer: Optional[str] = None,
+        model_config: Dict = None,
+        classes: Dict = {0: None},
+        weight_path: Optional[str] = None,
+        image_size: Tuple[int, int] = (224, 224),
+        mean: Optional[Tuple[float, float, float]] = None,
+        std: Optional[Tuple[float, float, float]] = None,
+        device: str = 'cpu'
+    ) -> None:
         super(ClassActivationMap, self).__init__()
         self.device = device
         self.classes = classes

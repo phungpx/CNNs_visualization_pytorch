@@ -42,13 +42,15 @@ if __name__ == '__main__':
         image = cv2.imread(str(image_path))
 
         image, class_name, class_score = visualizer(image)
-        cv2.putText(img=image,
-                    text=f'{args.module_name}: {class_name} ({class_score * 100:.2f}%)',
-                    org=(0, int(0.06 * image.shape[0])),
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=max(image.shape) / 1000,
-                    color=(255, 255, 255),
-                    thickness=max(image.shape) // 400)
+        cv2.putText(
+            img=image,
+            text=f'{args.module_name}: {class_name} ({class_score * 100:.2f}%)',
+            org=(0, int(0.06 * image.shape[0])),
+            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+            fontScale=max(image.shape) / 1000,
+            color=(255, 255, 255),
+            thickness=max(image.shape) // 400
+        )
 
         save_dir = output_dir.joinpath(Path(args.config_path).parent.stem).joinpath(args.module_name)
         if not save_dir.exists():

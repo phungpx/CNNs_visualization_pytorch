@@ -9,18 +9,12 @@ import utils
 
 
 class gradCAM(nn.Module):
-    def __init__(
-        self,
-        target_module: str,
-        target_layer: str,
-        model_config: Dict,
-        classes: Dict = {0: None},
-        weight_path: Optional[str] = None,
-        image_size: Tuple[int, int] = (224, 224),
-        mean: Optional[Tuple[float, float, float]] = None,
-        std: Optional[Tuple[float, float, float]] = None,
-        device: str = 'cpu'
-    ) -> None:
+    def __init__(self, target_module: str, target_layer: str, model_config: Dict,
+                 classes: Dict = {0: None}, weight_path: Optional[str] = None,
+                 image_size: Tuple[int, int] = (224, 224),
+                 mean: Optional[Tuple[float, float, float]] = None,
+                 std: Optional[Tuple[float, float, float]] = None,
+                 device: str = 'cpu') -> None:
         super(gradCAM, self).__init__()
         self.device = device
         self.classes = classes
@@ -28,8 +22,8 @@ class gradCAM(nn.Module):
         self.target_layer = target_layer
         self.target_module = target_module
 
-        self.mean = torch.tensor(mean, dtype=torch.float, device=device).view(1, 3, 1, 1) if mean else None
-        self.std = torch.tensor(std, dtype=torch.float, device=device).view(1, 3, 1, 1) if std else None
+        self.mean = torch.tensor(mean, dtype=torch.float).view(1, 3, 1, 1) if mean else None
+        self.std = torch.tensor(std, dtype=torch.float).view(1, 3, 1, 1) if std else None
 
         self.model = utils.create_instance(model_config)
         if weight_path is not None:
@@ -37,7 +31,6 @@ class gradCAM(nn.Module):
         self.model.to(self.device).eval()
 
         self.target_gradients: list = []
-        self.target_activations: list = []
 
         self._register_hook(target_module=self.target_module, target_layer=self.target_layer)
 
@@ -48,15 +41,10 @@ class gradCAM(nn.Module):
         if target_layer not in list(self.model._modules.get(target_module)._modules.keys()):
             raise TypeError('target layer must be in list of layers of module')
 
-        def register_forward_hook(module, input, output):
-            self.target_activations.clear()
-            self.target_activations.append(output)
-
         def register_backward_hook(module, grad_input, grad_output):
             self.target_gradients.clear()
             self.target_gradients.append(grad_output[0])
 
-        self.model._modules[target_module]._modules[target_layer].register_forward_hook(register_forward_hook)
         self.model._modules[target_module]._modules[target_layer].register_backward_hook(register_backward_hook)
 
     def _show_grad_cam(self, image: np.ndarray, grad_cam: np.ndarray) -> np.ndarray:
@@ -94,14 +82,12 @@ class gradCAM(nn.Module):
         class_score.backward(retain_graph=True)
 
         target_gradient = self.target_gradients[-1].detach().cpu().data   # [1, Cf, Hf, Wf]
-        target_activation = self.target_activations[-1].detach().cpu().data   # [1, Cf, Hf, Wf]
 
         weights = torch.mean(target_gradient, dim=(0, 2, 3), keepdim=True)  # [1, Cf, 1, 1]
         grad_cam = torch.sum(target_activation * weights, dim=(0, 1), keepdim=True)  # [1, 1, Hf, Wf]
         grad_cam = nn.ReLU(inplace=True)(grad_cam)  # [1, 1, Hf, Wf]
-        grad_cam = nn.functional.interpolate(
-            input=grad_cam, size=image.shape[:2], mode='bilinear', align_corners=False
-        )  # [1, 1, H, W]
+        grad_cam = nn.functional.interpolate(input=grad_cam, size=image.shape[:2],
+                                             mode='bilinear', align_corners=False)  # [1, 1, H, W]
         grad_cam = grad_cam.squeeze(dim=0).squeeze(dim=0)  # [H, W]
         grad_cam = (grad_cam - grad_cam.min()) / (grad_cam.max() - grad_cam.min())
         grad_cam = grad_cam.data.numpy()
