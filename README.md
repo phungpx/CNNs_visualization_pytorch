@@ -10,11 +10,6 @@ Using Grad, Grad-CAM or Grad-CAM++ for visualizing feature maps of Deep Convolut
 ```
 CNNs_visualization_pytorch
                     |
-                    ├── application
-                    |	    ├── templates
-                    |       |  	  └── home.html
-                    |	    └── flask.py
-                    |
                     ├── models
                     |	    ├── definitions  # including all definition of models
                     |	    └── weights      # including all trained weights for loading into models.
@@ -38,7 +33,6 @@ CNNs_visualization_pytorch
  - [x] Adding Grad-CAM method for visualizing any convolutional layer in CNNs.
  - [ ] Applying GuidedBackprop method which is proposed in paper[2].
  - [ ] Applying grad-CAM++ method which is proposed in paper[3].
- - [x] Adding [flask](https://flask.palletsprojects.com/en/2.0.x/) to build a simply API.
  - [x] Adding [.flake8](https://flake8.pycqa.org/en/latest/) to check coding style.
  - [x] Adding [mypy](https://mypy.readthedocs.io/en/stable/introduction.html) to check my code and find common bugs.
  - [x] Adding [pre-commit](https://pre-commit.com/) to solve hook issues.
